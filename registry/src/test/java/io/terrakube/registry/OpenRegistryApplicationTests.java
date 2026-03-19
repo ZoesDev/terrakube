@@ -3,6 +3,7 @@ package io.terrakube.registry;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -32,6 +33,10 @@ class OpenRegistryApplicationTests {
 	@AfterAll
 	public void stopServer() {
 		wireMockServer.stop();
+	}
+
+	@Test
+	void initLoad() {
 	}
 
 }
