@@ -1,12 +1,6 @@
 package io.terrakube.executor.service.workspace;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
@@ -42,6 +36,7 @@ import org.eclipse.jgit.transport.sshd.ServerKeyDatabase;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactoryBuilder;
 import org.eclipse.jgit.util.FS;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -54,7 +49,10 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class SetupWorkspaceImpl implements SetupWorkspace {
 
-    public static final String SSH_DIRECTORY = "%s/.terraform-spring-boot/executor/%s/%s/.ssh/%s";
+    public static final String SSH_DIRECTORY_FILE = "%s/.ssh/%s";
+    public static final String SSH_DIRECTORY_FILE_MODULE = "%s/.sshModule/%s";
+    public static final String SSH_DIRECTORY = "%s/.ssh";
+    public static final String SSH_DIRECTORY_MODULE = "%s/.sshModule";
 
     WorkspaceSecurity workspaceSecurity;
     boolean enableRegistrySecurity;
@@ -78,9 +76,8 @@ public class SetupWorkspaceImpl implements SetupWorkspace {
             } else {
                 downloadWorkspaceTarGz(workspaceCloneFolder, terraformJob.getSource());
             }
-            if (terraformJob.getModuleSshKey() != null && terraformJob.getModuleSshKey().length() > 0) {
-                generateModuleSshFolder(terraformJob.getModuleSshKey(), terraformJob.getOrganizationId(),
-                        terraformJob.getWorkspaceId(), terraformJob.getJobId());
+            if (terraformJob.getModuleSshKey() != null && !terraformJob.getModuleSshKey().isEmpty()) {
+                generateSshFolder(workspaceCloneFolder, terraformJob.getModuleSshKey(), SSH_DIRECTORY_FILE_MODULE);
             }
 
             if (enableRegistrySecurity)
@@ -136,11 +133,15 @@ public class SetupWorkspaceImpl implements SetupWorkspace {
         String userHomeDirectory = FileUtils.getUserDirectoryPath();
         log.info("User Home Directory: {}", userHomeDirectory);
 
-        String executorPath = Files.createTempDirectory("executor").toFile().getAbsolutePath();
+        String terrakubeDirectory = String.format("%s/.terraform-spring-boot/executor", userHomeDirectory);
+        FileUtils.forceMkdir(new File(terrakubeDirectory));
+
+        String executorPath = Files.createTempDirectory(Path.of(terrakubeDirectory), "tmp").toFile().getAbsolutePath();
         File executorFolder = new File(executorPath);
         FileUtils.forceMkdir(executorFolder);
         FileUtils.cleanDirectory(executorFolder);
-        log.info("Workspace git clone directory: {} for organizationId: {} and workspaceId: {}", executorFolder.getPath(), organizationId, workspaceId);
+        log.info("Workspace git clone directory: {} for organizationId: {} and workspaceId: {}",
+                executorFolder.getPath(), organizationId, workspaceId);
         return executorFolder;
     }
 
@@ -154,8 +155,7 @@ public class SetupWorkspaceImpl implements SetupWorkspace {
                     .setTransportConfigCallback(transport -> {
                         try {
                             ((SshTransport) transport).setSshSessionFactory(
-                                    getSshdSessionFactory(terraformJob.getVcsType(), terraformJob.getAccessToken(),
-                                            terraformJob.getOrganizationId(), terraformJob.getWorkspaceId()));
+                                    getSshdSessionFactory(gitCloneFolder, terraformJob.getAccessToken()));
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -263,10 +263,10 @@ public class SetupWorkspaceImpl implements SetupWorkspace {
         }
     }
 
-    public SshdSessionFactory getSshdSessionFactory(String vcsType, String accessToken, String organizationId,
-            String workspaceId) throws IOException {
-        File sshDir = generateWorkspaceSshFolder(vcsType, accessToken, organizationId, workspaceId);
-        SshdSessionFactory sshdSessionFactory = new SshdSessionFactoryBuilder()
+    public SshdSessionFactory getSshdSessionFactory(File gitCloneDirectory, String accessToken) throws IOException {
+        log.info("Generate new file SSH Key to clone workspace...");
+        File sshDir = generateSshFolder(gitCloneDirectory, accessToken, SSH_DIRECTORY_FILE);
+        return new SshdSessionFactoryBuilder()
                 .setServerKeyDatabase((h, s) -> new ServerKeyDatabase() {
 
                     @Override
@@ -289,17 +289,13 @@ public class SetupWorkspaceImpl implements SetupWorkspace {
                 .setHomeDirectory(FS.DETECTED.userHome())
                 .setSshDirectory(sshDir)
                 .build(new JGitKeyCache());
-
-        return sshdSessionFactory;
     }
 
-    private File generateWorkspaceSshFolder(String vcsType, String privateKey, String organizationId,
-            String workspaceId) throws IOException {
-        String sshFileName = vcsType.split("~")[1];
-        String sshFilePath = String.format(SSH_DIRECTORY, FileUtils.getUserDirectoryPath(), organizationId, workspaceId,
-                sshFileName);
+    private File generateSshFolder(File gitCloneDirectory, String privateKey, String location) throws IOException {
+        String sshFileName = "id_" + (privateKey.startsWith("-----BEGIN RSA PRIVATE KEY-----") ? "rsa": "ed25519");
+        String sshFilePath = String.format(location, gitCloneDirectory.getAbsolutePath(), sshFileName);
         File sshFile = new File(sshFilePath);
-        log.info("Creating new SSH folder for organization {} wordkspace {}", organizationId, workspaceId);
+        log.info("SSH file {}", sshFilePath);
         FileUtils.forceMkdirParent(sshFile);
         FileUtils.writeStringToFile(sshFile, privateKey + "\n", Charset.defaultCharset());
 
@@ -308,25 +304,7 @@ public class SetupWorkspaceImpl implements SetupWorkspace {
         perms.add(PosixFilePermission.OWNER_WRITE);
 
         Files.setPosixFilePermissions(Path.of(sshFile.getAbsolutePath()), perms);
-        return sshFile.getParentFile();
-    }
-
-    private File generateModuleSshFolder(String privateKey, String organizationId, String workspaceId, String jobId)
-            throws IOException {
-        log.warn("Generate new file SSH Key for modules...");
-        String sshFilePath = String.format(SSH_DIRECTORY, FileUtils.getUserDirectoryPath(), organizationId, workspaceId,
-                jobId);
-        File sshFile = new File(sshFilePath);
-        FileUtils.forceMkdirParent(sshFile);
-        log.info("Creating new module SSH folder for organization {} workspace {} with jobId {}", organizationId,
-                workspaceId, jobId);
-        FileUtils.writeStringToFile(sshFile, privateKey + "\n", Charset.defaultCharset());
-
-        Set<PosixFilePermission> perms = new HashSet<>();
-        perms.add(PosixFilePermission.OWNER_WRITE);
-        perms.add(PosixFilePermission.OWNER_READ);
-
-        Files.setPosixFilePermissions(Path.of(sshFile.getAbsolutePath()), perms);
+        log.info("SSH folder {}", sshFile.getParentFile());
         return sshFile.getParentFile();
     }
 
