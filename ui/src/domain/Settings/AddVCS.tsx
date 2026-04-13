@@ -3,7 +3,7 @@ import { Button, Dropdown, Form, Input, Space, Steps, Typography, message } from
 import TextArea from "antd/es/input/TextArea";
 import { useState } from "react";
 import { HiOutlineExternalLink } from "react-icons/hi";
-import { SiBitbucket } from "react-icons/si";
+import { SiBitbucket, SiForgejo } from "react-icons/si";
 import { VscAzureDevops } from "react-icons/vsc";
 import { useParams } from "react-router-dom";
 import { v1 as uuidv1 } from "uuid";
@@ -114,6 +114,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
         return "GitHub Enterprise";
       case "GITHUB_APP":
         return "Github App";
+      case "FORGEJO":
+        return "Forgejo / Gitea";
       default:
         return "GitHub";
     }
@@ -192,6 +194,23 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
       },
     },
   ];
+
+  const forgejoItems = [
+    {
+      label: "Forgejo (self-hosted)",
+      key: "1",
+      onClick: () => {
+        handleVCSClick(VcsTypeExtended.FORGEJO);
+      },
+    },
+    {
+      label: "Gitea (self-hosted)",
+      key: "2",
+      onClick: () => {
+        handleVCSClick(VcsTypeExtended.FORGEJO);
+      },
+    },
+  ];
   const getDocsUrl = (vcs: VcsTypeExtended) => {
     switch (vcs) {
       case "GITLAB":
@@ -211,6 +230,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
         return "https://docs.terrakube.io/user-guide/vcs-providers/github-enterprise";
       case "GITHUB_APP":
         return "https://docs.terrakube.io/user-guide/vcs-providers/github-app";
+      case "FORGEJO":
+        return "https://docs.terrakube.io/user-guide/vcs-providers/forgejo";
       default:
         return "https://docs.terrakube.io/user-guide/vcs-providers/github.com";
     }
@@ -228,6 +249,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
       case "AZURE_DEVOPS":
       case "AZURE_DEVOPS_SERVER":
         return "Managed Identity App ID";
+      case "FORGEJO":
+        return "Client ID";
       default:
         return connectionType === "OAUTH" ? "Client ID" : "App ID";
     }
@@ -245,6 +268,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
       case "AZURE_DEVOPS":
       case "AZURE_DEVOPS_SERVER":
         return "AZURE_SP_MI";
+      case "FORGEJO":
+        return "FORGEJO";
       default:
         return "GITHUB";
     }
@@ -261,6 +286,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
       case "GITHUB":
       case "GITHUB_APP":
         return "https://api.github.com";
+      case "FORGEJO":
+        return "";
       default:
         return "";
     }
@@ -277,6 +304,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
         return "ex. https://<AZURE DEVOPS INSTANCE HOSTNAME>";
       case "GITHUB_ENTERPRISE":
         return "ex. https://<GITHUB INSTANCE HOSTNAME>/api/v3";
+      case "FORGEJO":
+        return "ex. https://<FORGEJO/GITEA INSTANCE HOSTNAME>/api/v1";
       default:
         return "";
     }
@@ -293,6 +322,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
         return "ex. https://<AZURE DEVOPS INSTANCE HOSTNAME>";
       case "GITHUB_ENTERPRISE":
         return "ex. https://<GITHUB INSTANCE HOSTNAME>";
+      case "FORGEJO":
+        return "ex. https://<FORGEJO/GITEA INSTANCE HOSTNAME>";
       default:
         return "";
     }
@@ -338,6 +369,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
       case "AZURE_DEVOPS":
       case "AZURE_DEVOPS_SERVER":
         return "Client Secret";
+      case "FORGEJO":
+        return "Client Secret";
       default:
         return connectionType === "OAUTH" ? "Client Secret" : "Private Key in PKCS#8 format";
     }
@@ -357,6 +390,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
       case "AZURE_DEVOPS":
       case "AZURE_DEVOPS_SERVER":
         return "vso.code+vso.code_status";
+      case "FORGEJO":
+        return "repository";
       default:
         return "repo";
     }
@@ -513,6 +548,42 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
             </div>
           </div>
         );
+      case "FORGEJO":
+        return (
+          <div>
+            <Typography.Text type="secondary" className="paragraph">
+              1. On your Forgejo/Gitea instance, navigate to <b>Settings → Applications</b> and register a new OAuth2
+              Application with the following information:
+            </Typography.Text>
+            <div className="paragraph">
+              <Typography.Text type="secondary" className="paragraph">
+                <p></p>
+                <ul className="disc-list">
+                  <li>
+                    <b>Application Name:</b>{" "}
+                    <Typography.Paragraph
+                      copyable
+                      type="secondary"
+                      style={{ display: "inline", margin: 0, paddingLeft: "5px" }}
+                    >
+                      Terrakube ({sessionStorage.getItem(ORGANIZATION_NAME)})
+                    </Typography.Paragraph>
+                  </li>
+                  <li>
+                    <b>Redirect URI:</b>{" "}
+                    <Typography.Paragraph
+                      copyable
+                      type="secondary"
+                      style={{ display: "inline", margin: 0, paddingLeft: "5px" }}
+                    >
+                      {getCallBackUrl()}
+                    </Typography.Paragraph>
+                  </li>
+                </ul>
+              </Typography.Text>
+            </div>
+          </div>
+        );
       default:
         return (
           <div>
@@ -639,6 +710,13 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
             2. Now Terrakube should be able to access your Azure DevOps organization.
           </Typography.Text>
         );
+      case "FORGEJO":
+        return (
+          <Typography.Text type="secondary" className="paragraph">
+            2. After saving, you'll see the Client ID and Client Secret. Enter them below along with your instance URL
+            and API URL (e.g. <code>https://your-forgejo.example.com/api/v1</code>):
+          </Typography.Text>
+        );
       default:
         return (
           <Typography.Text type="secondary" className="paragraph">
@@ -659,6 +737,8 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
         return null;
       case "AZURE_DEVOPS":
       case "AZURE_DEVOPS_SERVER":
+        return null;
+      case "FORGEJO":
         return null;
       default:
         return (
@@ -694,6 +774,9 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
           return `${endpoint}/oauth2/authorize?client_id=${clientId}&redirect_uri=${callbackUrl}&response_type=Assertion&scope=vso.code+vso.code_status`;
         else
           return `https://app.vssps.visualstudio.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${callbackUrl}&response_type=Assertion&scope=vso.code+vso.code_status`;
+      case "FORGEJO":
+        // Forgejo is always self-hosted; endpoint is required
+        return `${endpoint}/login/oauth/authorize?client_id=${clientId}&redirect_uri=${callbackUrl}&response_type=code&scope=repository`;
       default:
         if (endpoint != null)
           return `${endpoint}/login/oauth/authorize?client_id=${clientId}&allow_signup=false&scope=repo`;
@@ -824,6 +907,13 @@ export const AddVCS = ({ setMode, loadVCS }: Props) => {
               <Button size="large">
                 <Space>
                   <VscAzureDevops /> Azure Devops <DownOutlined />
+                </Space>
+              </Button>
+            </Dropdown>
+            <Dropdown menu={{ items: forgejoItems }}>
+              <Button size="large">
+                <Space>
+                  <SiForgejo /> Forgejo / Gitea <DownOutlined />
                 </Space>
               </Button>
             </Dropdown>

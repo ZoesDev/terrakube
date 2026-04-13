@@ -1,6 +1,7 @@
 package io.terrakube.api.plugin.vcs;
 
 import io.terrakube.api.plugin.vcs.provider.bitbucket.BitBucketWebhookService;
+import io.terrakube.api.plugin.vcs.provider.forgejo.ForgejoWebhookService;
 import io.terrakube.api.plugin.vcs.provider.github.GitHubWebhookService;
 import io.terrakube.api.plugin.vcs.provider.gitlab.GitLabWebhookService;
 import io.terrakube.api.repository.JobRepository;
@@ -21,6 +22,7 @@ public class PrCommentService {
     GitHubWebhookService gitHubWebhookService;
     GitLabWebhookService gitLabWebhookService;
     BitBucketWebhookService bitBucketWebhookService;
+    ForgejoWebhookService forgejoWebhookService;
     JobRepository jobRepository;
 
     public void postPlanResult(Job job) {
@@ -55,6 +57,9 @@ public class PrCommentService {
                 break;
             case BITBUCKET:
                 commentId = bitBucketWebhookService.postPrComment(job, markdownComment);
+                break;
+            case FORGEJO:
+                commentId = forgejoWebhookService.postPrComment(job, markdownComment);
                 break;
             default:
                 break;

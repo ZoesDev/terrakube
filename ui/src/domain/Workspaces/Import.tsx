@@ -21,7 +21,7 @@ import { ValidateErrorEntity } from "rc-field-form/lib/interface";
 import { useEffect, useState } from "react";
 import { IconContext } from "react-icons";
 import { BiBookBookmark, BiTerminal, BiUpload } from "react-icons/bi";
-import { SiBitbucket } from "react-icons/si";
+import { SiBitbucket, SiForgejo } from "react-icons/si";
 import { VscAzureDevops } from "react-icons/vsc";
 import { Link, useNavigate } from "react-router-dom";
 import { ORGANIZATION_ARCHIVE, ORGANIZATION_NAME } from "../../config/actionTypes";
@@ -165,6 +165,23 @@ export const ImportWorkspace = () => {
       },
     },
   ];
+
+  const forgejoItems = [
+    {
+      label: "Forgejo (self-hosted)",
+      key: "1",
+      onClick: () => {
+        handleVCSClick(VcsTypeExtended.FORGEJO);
+      },
+    },
+    {
+      label: "Gitea (self-hosted)",
+      key: "2",
+      onClick: () => {
+        handleVCSClick(VcsTypeExtended.FORGEJO);
+      },
+    },
+  ];
   const navigate = useNavigate();
   useEffect(() => {
     setOrganizationName(sessionStorage.getItem(ORGANIZATION_NAME) ?? undefined);
@@ -229,6 +246,13 @@ export const ImportWorkspace = () => {
         return (
           <IconContext.Provider value={{ size: "20px" }}>
             <VscAzureDevops />
+            &nbsp;
+          </IconContext.Provider>
+        );
+      case "FORGEJO":
+        return (
+          <IconContext.Provider value={{ size: "20px" }}>
+            <SiForgejo />
             &nbsp;
           </IconContext.Provider>
         );
@@ -559,6 +583,13 @@ export const ImportWorkspace = () => {
                         <Button size="large">
                           <Space>
                             <VscAzureDevops /> Azure Devops <DownOutlined />
+                          </Space>
+                        </Button>
+                      </Dropdown>
+                      <Dropdown menu={{ items: forgejoItems }}>
+                        <Button size="large">
+                          <Space>
+                            <SiForgejo /> Forgejo / Gitea <DownOutlined />
                           </Space>
                         </Button>
                       </Dropdown>

@@ -1,6 +1,6 @@
 import { GitlabOutlined, GithubOutlined } from "@ant-design/icons";
 import { IconContext } from "react-icons";
-import { SiBitbucket, SiGit } from "react-icons/si";
+import { SiBitbucket, SiGit, SiForgejo } from "react-icons/si";
 import { VscAzureDevops } from "react-icons/vsc";
 import { VcsType } from "../../../domain/types";
 
@@ -27,6 +27,14 @@ export default function VcsLogo({ type }: Props) {
       );
     case VcsType.GITHUB:
       return <GithubOutlined style={{ fontSize: "18px" }} />;
+
+    case VcsType.FORGEJO:
+      return (
+        <IconContext.Provider value={{ size: "18px" }}>
+          <SiForgejo />
+          &nbsp;
+        </IconContext.Provider>
+      );
 
     default:
       return <SiGit />;

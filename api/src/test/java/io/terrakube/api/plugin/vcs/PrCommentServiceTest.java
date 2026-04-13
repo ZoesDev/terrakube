@@ -17,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.terrakube.api.plugin.vcs.provider.bitbucket.BitBucketWebhookService;
+import io.terrakube.api.plugin.vcs.provider.forgejo.ForgejoWebhookService;
 import io.terrakube.api.plugin.vcs.provider.github.GitHubWebhookService;
 import io.terrakube.api.plugin.vcs.provider.gitlab.GitLabWebhookService;
 import io.terrakube.api.repository.JobRepository;
@@ -35,6 +36,7 @@ public class PrCommentServiceTest {
     GitHubWebhookService gitHubWebhookService;
     GitLabWebhookService gitLabWebhookService;
     BitBucketWebhookService bitBucketWebhookService;
+    ForgejoWebhookService forgejoWebhookService;
     JobRepository jobRepository;
 
     PrCommentService subject;
@@ -44,12 +46,14 @@ public class PrCommentServiceTest {
         gitHubWebhookService = mock(GitHubWebhookService.class);
         gitLabWebhookService = mock(GitLabWebhookService.class);
         bitBucketWebhookService = mock(BitBucketWebhookService.class);
+        forgejoWebhookService = mock(ForgejoWebhookService.class);
         jobRepository = mock(JobRepository.class);
 
         subject = new PrCommentService(
                 gitHubWebhookService,
                 gitLabWebhookService,
                 bitBucketWebhookService,
+                forgejoWebhookService,
                 jobRepository);
     }
 

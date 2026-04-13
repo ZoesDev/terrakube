@@ -2,7 +2,7 @@ import { DeleteOutlined, EditOutlined, GithubOutlined, GitlabOutlined, PlusOutli
 import { Alert, Button, Card, Col, Divider, List, Popconfirm, Row, Typography, message } from "antd";
 import { useEffect, useState } from "react";
 import { IconContext } from "react-icons";
-import { SiBitbucket } from "react-icons/si";
+import { SiBitbucket, SiForgejo } from "react-icons/si";
 import { VscAzureDevops } from "react-icons/vsc";
 import { useParams } from "react-router-dom";
 import { ORGANIZATION_NAME } from "../../config/actionTypes";
@@ -50,6 +50,12 @@ export const VCSSettings = ({ vcsMode, managePermission = true }: Props) => {
             <VscAzureDevops />
           </IconContext.Provider>
         );
+      case "FORGEJO":
+        return (
+          <IconContext.Provider value={{ size: "20px" }}>
+            <SiForgejo />
+          </IconContext.Provider>
+        );
       default:
         return <GithubOutlined style={{ fontSize: "20px" }} />;
     }
@@ -65,6 +71,8 @@ export const VCSSettings = ({ vcsMode, managePermission = true }: Props) => {
         return "Azure Devops";
       case "AZURE_SP_MI":
         return "Azure Devops";
+      case "FORGEJO":
+        return "Forgejo / Gitea";
       default:
         return "GitHub";
     }
@@ -87,6 +95,9 @@ export const VCSSettings = ({ vcsMode, managePermission = true }: Props) => {
           return `${endpoint}/oauth2/authorize?client_id=${clientId}&redirect_uri=${callbackUrl}&response_type=Assertion&scope=vso.code+vso.code_status`;
         else
           return `https://app.vssps.visualstudio.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${callbackUrl}&response_type=Assertion&scope=vso.code+vso.code_status`;
+      case "FORGEJO":
+        // Forgejo is always self-hosted; endpoint is required
+        return `${endpoint}/login/oauth/authorize?client_id=${clientId}&redirect_uri=${callbackUrl}&response_type=code&scope=repository`;
       default:
         if (endpoint != null)
           return `${endpoint}/login/oauth/authorize?client_id=${clientId}&allow_signup=false&scope=repo`;

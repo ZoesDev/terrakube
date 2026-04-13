@@ -21,6 +21,8 @@ import io.terrakube.api.plugin.vcs.provider.azdevops.AzDevOpsTokenService;
 import io.terrakube.api.plugin.vcs.provider.bitbucket.BitBucketToken;
 import io.terrakube.api.plugin.vcs.provider.bitbucket.BitbucketTokenService;
 import io.terrakube.api.plugin.vcs.provider.exception.TokenException;
+import io.terrakube.api.plugin.vcs.provider.forgejo.ForgejoToken;
+import io.terrakube.api.plugin.vcs.provider.forgejo.ForgejoTokenService;
 import io.terrakube.api.plugin.vcs.provider.github.GitHubToken;
 import io.terrakube.api.plugin.vcs.provider.github.GitHubTokenService;
 import io.terrakube.api.plugin.vcs.provider.gitlab.GitLabToken;
@@ -49,6 +51,7 @@ public class TokenService {
     BitbucketTokenService bitbucketTokenService;
     GitLabTokenService gitLabTokenService;
     AzDevOpsTokenService azDevOpsTokenService;
+    ForgejoTokenService forgejoTokenService;
     ScheduleVcsService scheduleVcsService;
 
     @Transactional
@@ -97,6 +100,12 @@ public class TokenService {
                     // Refresh token every 30 minutes, Azure DevOps Token expire after 1 hour (3599
                     // seconds)
                     scheduleVcsService.createTask(String.format(QUARTZ_EVERY_30_MINUTES, minutes), vcsId);
+                    break;
+                case FORGEJO:
+                    ForgejoToken forgejoToken = forgejoTokenService.getAccessToken(vcs.getClientId(),
+                            vcs.getClientSecret(), tempCode, vcs.getCallback(), vcs.getEndpoint());
+                    vcs.setAccessToken(forgejoToken.getAccess_token());
+                    // Forgejo OAuth tokens are long-lived; no refresh scheduling needed
                     break;
                 default:
                     break;

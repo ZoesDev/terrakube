@@ -6,5 +6,6 @@ public enum VcsType {
     BITBUCKET,
     AZURE_DEVOPS,
     AZURE_SP_MI,
-    PUBLIC
+    PUBLIC,
+    FORGEJO
 }

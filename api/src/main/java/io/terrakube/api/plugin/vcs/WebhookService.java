@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import io.terrakube.api.plugin.scheduler.ScheduleJobService;
 import io.terrakube.api.plugin.vcs.provider.bitbucket.BitBucketWebhookService;
+import io.terrakube.api.plugin.vcs.provider.forgejo.ForgejoWebhookService;
 import io.terrakube.api.plugin.vcs.provider.github.GitHubWebhookService;
 import io.terrakube.api.plugin.vcs.provider.gitlab.GitLabWebhookService;
 import io.terrakube.api.repository.JobRepository;
@@ -40,6 +41,7 @@ public class WebhookService {
     GitHubWebhookService gitHubWebhookService;
     GitLabWebhookService gitLabWebhookService;
     BitBucketWebhookService bitBucketWebhookService;
+    ForgejoWebhookService forgejoWebhookService;
     JobRepository jobRepository;
     ScheduleJobService scheduleJobService;
     ObjectMapper objectMapper;
@@ -76,6 +78,10 @@ public class WebhookService {
             case BITBUCKET:
                 webhookResult = bitBucketWebhookService.processWebhook(jsonPayload, headers,
                         base64WorkspaceId);
+                break;
+            case FORGEJO:
+                webhookResult = forgejoWebhookService.processWebhook(jsonPayload, headers,
+                        base64WorkspaceId, vcs);
                 break;
             default:
                 break;
@@ -201,6 +207,9 @@ public class WebhookService {
             case BITBUCKET:
                 webhookRemoteId = bitBucketWebhookService.createOrUpdateWebhook(workspace, webhook);
                 break;
+            case FORGEJO:
+                webhookRemoteId = forgejoWebhookService.createOrUpdateWebhook(workspace, webhook);
+                break;
             default:
                 break;
         }
@@ -236,6 +245,9 @@ public class WebhookService {
                 break;
             case BITBUCKET:
                 bitBucketWebhookService.deleteWebhook(workspace, webhook.getRemoteHookId());
+                break;
+            case FORGEJO:
+                forgejoWebhookService.deleteWebhook(workspace, webhook.getRemoteHookId());
                 break;
             default:
                 break;
@@ -286,6 +298,9 @@ public class WebhookService {
                 break;
             case GITLAB:
                 gitLabWebhookService.sendCommitStatus(job, JobStatus.pending);
+                break;
+            case FORGEJO:
+                forgejoWebhookService.sendCommitStatus(job, JobStatus.pending);
                 break;
             default:
                 break;

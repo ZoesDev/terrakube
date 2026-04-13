@@ -121,6 +121,7 @@ export enum VcsType {
   AZURE_DEVOPS = "AZURE_DEVOPS",
   AZURE_SP_MI = "AZURE_SP_MI",
   PUBLIC = "PUBLIC",
+  FORGEJO = "FORGEJO",
 }
 
 export enum VcsTypeExtended {
@@ -135,6 +136,7 @@ export enum VcsTypeExtended {
   AZURE_DEVOPS = "AZURE_DEVOPS",
   AZURE_DEVOPS_SERVER = "AZURE_DEVOPS_SERVER",
   PUBLIC = "PUBLIC",
+  FORGEJO = "FORGEJO",
 }
 
 export type VcsModel = {
